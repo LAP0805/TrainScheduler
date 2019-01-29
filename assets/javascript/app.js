@@ -7,15 +7,22 @@ $( document ).ready(function() {
         storageBucket: "train-scheduler-47646.appspot.com",
         messagingSenderId: "782545949663"
       };
-      firebase.initializeApp(config);
+firebase.initializeApp(config);
 
 
 var database = firebase.database();
+
 count=0;
+//update count to count of last child. This lets me refresh the page and not have count start over, so that user can append next train in order//
+database.ref().orderByKey().limitToLast(1).on("child_added",function(child){
+    console.log(child.val())
+    count = child.val().count;
+    console.log(count);
+});
+
 
 database.ref().on("child_added", function(child){
    
-    console.log(child.val());
     var trainNumber=child.val().count;
     var initialTime= child.val().initalTime;
     var initialTimeMoment = new moment(initialTime, "HH:mm").subtract(1, "years");
@@ -27,7 +34,15 @@ database.ref().on("child_added", function(child){
     var nextTrainTime = now.add(minutesAway, "m").format("HH:mm");
             
     $('#myTable tr:last').after("<tr><td>"+child.val().train+"</td><td>"+child.val().destination+"</td><td>"+child.val().frequency+"</td><td class='nextTrain"+trainNumber+"'>"+nextTrainTime+"</td><td class='minsAway"+trainNumber+"'>"+minutesAway+"</td>");
-   
+   setInterval(function(){
+    var now = moment();
+    var difference = now.diff(initialTimeMoment, "minutes");
+    var remainder = difference % frequency ;
+    var minutesAway= frequency - remainder;
+    var nextTrainTime = now.add(minutesAway, "m").format("HH:mm");
+    $(".nextTrain"+trainNumber).text(nextTrainTime);
+    $(".minsAway"+trainNumber).text(minutesAway);
+   },3000);
    
 });
  
@@ -55,7 +70,7 @@ $("#submit").on("click", function(e){
 });
 
 
-
+//get current time and add zeros//
 function getTime(){
 
     var date = new Date();
