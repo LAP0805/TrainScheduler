@@ -11,33 +11,29 @@ $( document ).ready(function() {
 
 
 var database = firebase.database();
+count=0;
 
 database.ref().on("child_added", function(child){
+   
+    console.log(child.val());
+    var trainNumber=child.val().count;
     var initialTime= child.val().initalTime;
-    initialTimeMoment = new moment(initialTime, "HH:mm")
-    console.log(initialTimeMoment);
+    var initialTimeMoment = new moment(initialTime, "HH:mm").subtract(1, "years");
     var frequency = child.val().frequency;
-    frequencyMoment= new moment(frequency, "mm")
-    console.log(frequencyMoment);
- var now = moment();
- var difference = now.diff(initialTimeMoment, "minutes");
- var remainder = difference % frequency ;
- console.log(remainder);
- minutesAway= frequency - remainder;
- console.log(minutesAway);
- nextTrainTime = now.add(minutesAway, "m").format("HH:mm");
- console.log(nextTrainTime);
-
- 
-
-    $('#myTable tr:last').after("<tr><td>"+child.val().train+"</td><td>"+child.val().destination+"</td><td>"+child.val().frequency+"</td><td>"+nextTrainTime+"</td><td>"+minutesAway+"</td>");
-    
-
+    var now = moment();
+    var difference = now.diff(initialTimeMoment, "minutes");
+    var remainder = difference % frequency ;
+    var minutesAway= frequency - remainder;
+    var nextTrainTime = now.add(minutesAway, "m").format("HH:mm");
+            
+    $('#myTable tr:last').after("<tr><td>"+child.val().train+"</td><td>"+child.val().destination+"</td><td>"+child.val().frequency+"</td><td class='nextTrain"+trainNumber+"'>"+nextTrainTime+"</td><td class='minsAway"+trainNumber+"'>"+minutesAway+"</td>");
+   
    
 });
  
 $("#submit").on("click", function(e){
     e.preventDefault();
+    count++
     var train=$("#train-name").val();
     var destination=$("#train-destination").val();
     var frequency = $("#train-frequency").val();
@@ -46,11 +42,16 @@ $("#submit").on("click", function(e){
     
     ///set database info//
     database.ref().push({
+        count:count,
         train:train,
         destination:destination,
         frequency:frequency,
         initalTime:initialTime
     });
+    $("#train-name").val("");
+    $("#train-destination").val("");
+    $("#train-frequency").val("");
+    $("#train-time").val("");
 });
 
 
@@ -58,24 +59,32 @@ $("#submit").on("click", function(e){
 function getTime(){
 
     var date = new Date();
-        var hours = date.getHours();
-        var minutes = date.getMinutes();
-        $("#timeHere").text(hours +":" + minutes)
-    setInterval(function(){ 
-        var date = new Date();
-        var hours = date.getHours();
-        var minutes = date.getMinutes();
+        function addZero(i) {
+             if (i < 10) {
+            i = "0" + i;
+        }
+            return i;
+        }
+    var hours = addZero(date.getHours());
+    var minutes = addZero(date.getMinutes());
+    $("#timeHere").text(hours +":" + minutes);
+    setInterval(function(){
+        function addZero(i) {
+            if (i < 10) {
+           i = "0" + i;
+       }
+           return i;
+       }
+    var date = new Date();
+    var hours = addZero(date.getHours());
+    var minutes = addZero(date.getMinutes());
+    $("#timeHere").text(hours +":" + minutes);
     }, 3000);
+
+   
    
 }
 getTime();
-
-
-
-
-
-
-
 
 
 
