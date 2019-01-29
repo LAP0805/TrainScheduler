@@ -15,32 +15,32 @@ var database = firebase.database();
 count=0;
 //update count to count of last child. This lets me refresh the page and not have count start over, so that user can append next train in order//
 database.ref().orderByKey().limitToLast(1).on("child_added",function(child){
-    console.log(child.val())
-    count = child.val().count;
-    console.log(count);
+    count = child.val().train.count;
+  
 });
 
 
 database.ref().on("child_added", function(child){
-   
-    var trainNumber=child.val().count;
-    var initialTime= child.val().initalTime;
+   console.log(child.val());
+    var trainNumber=child.val().train.count;
+    console.log(trainNumber);
+    var initialTime= child.val().train.initalTime;
     var initialTimeMoment = new moment(initialTime, "HH:mm").subtract(1, "years");
-    var frequency = child.val().frequency;
+    var frequency = child.val().train.frequency;
     var now = moment();
     var difference = now.diff(initialTimeMoment, "minutes");
     var remainder = difference % frequency ;
     var minutesAway= frequency - remainder;
     var nextTrainTime = now.add(minutesAway, "m").format("HH:mm");
             
-    $('#myTable tr:last').after("<tr><td>"+child.val().train+"</td><td>"+child.val().destination+"</td><td>"+child.val().frequency+"</td><td class='nextTrain"+trainNumber+"'>"+nextTrainTime+"</td><td class='minsAway"+trainNumber+"'>"+minutesAway+"</td>");
+    $('#myTable tr:last').after("<tr><td>"+child.val().train.train+"</td><td>"+child.val().train.destination+"</td><td>"+child.val().train.frequency+"</td><td class='train-"+trainNumber+"'>"+nextTrainTime+"</td><td class='minsAway"+trainNumber+"'>"+minutesAway+"</td><td><button id='train"+trainNumber+"'>Remove Train</button></td>");
    setInterval(function(){
     var now = moment();
     var difference = now.diff(initialTimeMoment, "minutes");
     var remainder = difference % frequency ;
     var minutesAway= frequency - remainder;
     var nextTrainTime = now.add(minutesAway, "m").format("HH:mm");
-    $(".nextTrain"+trainNumber).text(nextTrainTime);
+    $(".train-"+trainNumber).text(nextTrainTime);
     $(".minsAway"+trainNumber).text(minutesAway);
    },3000);
    
@@ -56,19 +56,30 @@ $("#submit").on("click", function(e){
     
     
     ///set database info//
-    database.ref().push({
+    var trainsRef = database.ref().child("train"+count);
+    trainsRef.child("train").set({
         count:count,
         train:train,
         destination:destination,
         frequency:frequency,
         initalTime:initialTime
     });
+   
+        
+    
     $("#train-name").val("");
     $("#train-destination").val("");
     $("#train-frequency").val("");
     $("#train-time").val("");
 });
 
+///remove train//
+$("#myTable").on("click","button",function(){
+    var toRemove = $(this).attr("id");
+    console.log(toRemove);
+    database.ref().child(toRemove).remove();
+    $(this).parent().parent().remove();
+})
 
 //get current time and add zeros//
 function getTime(){
@@ -100,7 +111,6 @@ function getTime(){
    
 }
 getTime();
-
 
 
 
