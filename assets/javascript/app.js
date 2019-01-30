@@ -33,7 +33,7 @@ database.ref().on("child_added", function(child){
     var minutesAway= frequency - remainder;
     var nextTrainTime = now.add(minutesAway, "m").format("HH:mm");
             
-    $('#myTable tr:last').after("<tr><td>"+child.val().train.train+"</td><td>"+child.val().train.destination+"</td><td>"+child.val().train.frequency+"</td><td class='train-"+trainNumber+"'>"+nextTrainTime+"</td><td class='minsAway"+trainNumber+"'>"+minutesAway+"</td><td><button id='train"+trainNumber+"'>Remove Train</button></td>");
+    $('#myTable tr:last').after("<tr><td>"+child.val().train.train+"</td><td>"+child.val().train.destination+"</td><td>"+child.val().train.frequency+"</td><td class='train-"+trainNumber+"'>"+nextTrainTime+"</td><td class='minsAway"+trainNumber+"'>"+minutesAway+"</td><td class='adminRemove' style='display:none'><button id='train"+trainNumber+"'>Remove Train</button></td>");
    setInterval(function(){
     var now = moment();
     var difference = now.diff(initialTimeMoment, "minutes");
@@ -112,6 +112,65 @@ function getTime(){
 }
 getTime();
 
+//authentication//
+$("#signupButton1").on("click", function(){
+    var email = $("#signupEmail").val().trim();
+    var password = $("#signupPassword").val().trim();
+    firebase.auth().createUserWithEmailAndPassword(email, password).catch(function(error) {
+        // Handle Errors here.
+        var errorCode = error.code;
+        var errorMessage = error.message;
+        alert("please try again, signup unsuccesful")
+      }); 
+      $('#signupModal').modal('hide');
+      
+});
+
+$("#signinButton1").on("click", function(){
+    var email = $("#signinEmail").val().trim();
+    var password = $("#signinPassword").val().trim();
+    $('#signinModal').modal('hide');
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+  .then(function() {
+    return firebase.auth().signInWithEmailAndPassword(email, password);
+  })
+  .catch(function(error) {
+    var errorCode = error.code;
+    var errorMessage = error.message;
+  });
+
+});
+
+
+$("#signoutButton").on("click",function(){
+    $("#welcomeUser").text("");
+    $("#adminControls").css({display:"none"});
+  $(".adminRemove").css({display:"none"});
+  $("#signinButton").css({display:"block"});
+  $("#signoutButton").css({display:"none"});
+  firebase.auth().signOut();
+
+})
+firebase.auth().onAuthStateChanged(user => {
+    if (user) {
+     console.log("signed in")
+     $("#welcomeUser").text("Welcome Admin!");
+        $("#adminControls").css({display:"block"});
+            $(".adminRemove").css({display:"block"});
+            $("#signinButton").css({display:"none"});
+            $("#signoutButton").css({display:"block"});
+            //had to set timeout to update remove train button on page refresh, as auth function executes before on child_added function//
+            setTimeout(function(){
+                $(".adminRemove").css({display:"block"});
+            }, 500);       
+
+    } else {
+      console.log("signed out")
+      $("#signoutButton").css({display:"none"});
+      $("#adminControls").css({display:"none"});
+      $(".adminRemove").css({display:"none"});
+    }
+  });
 
 
 ///document ready closing tag//
